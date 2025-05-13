@@ -1,0 +1,89 @@
+#-----------------------------------------------------------------------
+# General Java & Build Tool Ignores (Focus on Maven)
+#-----------------------------------------------------------------------
+
+# Compiled class files
+*.class
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Maven Build directory (CRUCIAL for Maven projects)
+target/
+
+# Other potential build output directories (less common in pure Maven)
+# build/         # Used by Gradle - can ignore if exclusively Maven
+out/           # Sometimes used for output, e.g. in IntelliJ IDEA
+
+# Generated directories and files
+/generated/ # Common location for generated source/resources
+
+# Dependency directories (often managed globally by Maven in ~/.m2)
+# .gradle/    # Gradle cache/wrapper files - ignore if exclusively Maven
+# .m2/        # Maven local repository - should be globally ignored, not per-project
+
+# Logs
+*.log
+log/
+logs/
+
+# Temp files
+*.tmp
+temp/
+
+#-----------------------------------------------------------------------
+# IDE specific files & directories (VS Code is key here)
+#-----------------------------------------------------------------------
+
+.vscode/         # VS Code settings, tasks, launch configurations - IMPORTANT
+.settings/       # Eclipse settings - ignore if exclusively VS Code
+.project         # Eclipse project file - ignore if exclusively VS Code
+.classpath       # Eclipse classpath file - ignore if exclusively VS Code
+*.iml            # IntelliJ IDEA module files - ignore if exclusively VS Code
+*.ipr            # IntelliJ IDEA project files - ignore if exclusively VS Code
+*.iws            # IntelliJ IDEA workspace files - ignore if exclusively VS Code
+
+#-----------------------------------------------------------------------
+# Operating System files
+#-----------------------------------------------------------------------
+
+.DS_Store        # macOS
+Thumbs.db        # Windows
+
+#-----------------------------------------------------------------------
+# Spring Boot specific files & directories
+#-----------------------------------------------------------------------
+
+# Spring Boot Devtools file (can be ignored if not needed in repo)
+# /.spring-boot-devtools.properties
+
+# Embedded databases (if used as files within the project root)
+# *.mv.db       # H2 Database file
+# *.trace.db    # H2 Database trace file
+
+#-----------------------------------------------------------------------
+# Configuration / Secrets (Handle with caution!)
+#-----------------------------------------------------------------------
+
+# Generally, you *do* want to commit your main application configuration
+# files like application.properties or application.yml.
+#
+# EXCEPT if they contain sensitive secrets (passwords, API keys, etc.).
+# In that case, consider:
+# 1. Using environment variables.
+# 2. Using external configuration servers.
+# 3. Using placeholder values in committed config files and injecting
+#    secrets via environment variables or build processes.
+# 4. Committing a template file (e.g., application.properties.example)
+#    and ignoring the actual application.properties file.
+#
+# # Example: If application.properties contains sensitive secrets you MUST NOT commit:
+# application.properties
+# # Commit a template instead:
+# !application.properties.example
+
+# For environment files if used (e.g., with Docker compose or external tools)
+# .env
+# .env.*
