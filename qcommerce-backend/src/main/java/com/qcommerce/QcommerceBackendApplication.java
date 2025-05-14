@@ -1,5 +1,4 @@
-package com.qcommerce.qcommerce_backend;
-
+package com.qcommerce;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

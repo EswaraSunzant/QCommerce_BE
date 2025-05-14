@@ -1,4 +1,4 @@
-package com.qcommerce.qcommerce_backend;
+package com.qcommerce;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
