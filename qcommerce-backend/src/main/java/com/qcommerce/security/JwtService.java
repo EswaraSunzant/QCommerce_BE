@@ -1,7 +1,7 @@
 package com.qcommerce.security;
 
+import org.springframework.beans.factory.annotation.Value; // Import Value
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -20,23 +20,27 @@ import io.jsonwebtoken.Claims;
 @Service
 public class JwtService {
 
-    private final String SECRET_KEY = "your-secret-key";  // Replace with a real secret key
-    private final long JWT_EXPIRATION_MS = 86400000;    // 1 day
-    private final long REFRESH_TOKEN_EXPIRATION_MS = 604800000;  // 7 days
+    // Inject from properties
+    @Value("${application.security.jwt.secret-key}")
+    private String secretKey;
+    @Value("${application.security.jwt.expiration}")
+    private long jwtExpiration;
+    @Value("${application.security.jwt.refresh-expiration}")
+    private long refreshTokenExpiration;
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
     private String generateToken(Map<String, Object> extraClaims, Authentication authentication) {
-        org.springframework.security.core.userdetails.User userDetails = (org.springframework.security.core.userdetails.User) authentication.getPrincipal(); // Change to Spring's User
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION_MS))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration)) // Use injected expiration
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
@@ -46,11 +50,11 @@ public class JwtService {
     }
 
     public String generateRefreshToken(Authentication authentication) {
-        org.springframework.security.core.userdetails.User userDetails = (org.springframework.security.core.userdetails.User) authentication.getPrincipal(); // Change to Spring's User
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         return Jwts.builder()
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_EXPIRATION_MS))
+                .setExpiration(new Date(System.currentTimeMillis() + refreshTokenExpiration)) // Use injected expiration
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
