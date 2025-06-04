@@ -1,0 +1,232 @@
+openapi: 3.0.0
+info:
+  title: QCommerce API - User Registration
+  version: v1.0.0
+  description: API specification for User Registration in the QCommerce Application.
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.qcommerce.example.com/v1
+    description: Production server
+
+tags:
+  - name: Authentication and User # Ensure this exact name is used if you have operation-level tags too
+    description: User registration operations.
+
+paths:
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags:
+        - Authentication and User # Consistent with the global tag
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409': # Consider adding a 409 Conflict for user already exists
+          description: User with the given email or phone already exists.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    RoleReference:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: integer
+          format: int64 # Match Long in RoleEntity
+          example: 1
+          description: The ID of the role.
+
+    UserRegistration:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: "User's email address. Must be unique."
+          maxLength: 254
+          pattern: "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$" # Basic email pattern
+          example: testuser@example.com
+        phone:
+          type: string
+          nullable: true
+          description: "User's phone number, preferably in E.164 format. Must be unique if provided."
+          pattern: "^\\+[1-9]\\d{1,14}$" # Example E.164 regex
+          example: "+14155552671"
+        password:
+          type: string
+          format: password # For UI hint
+          description: "User's password. Must be 8-100 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character."
+          minLength: 8
+          maxLength: 100
+          # Example pattern: At least one uppercase, one lowercase, one digit, one special char
+          pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&._-])[A-Za-z\\d@$!%*?&._-]{8,}$"
+          example: "Str0ngP@ss!"
+        locale:
+          type: string
+          nullable: true
+          description: "The user's preferred locale. Uses IETF BCP 47 language tags."
+          enum:
+            - "en-US"
+            - "en-GB"
+            - "es-ES"
+            - "es-MX"
+            - "fr-FR"
+            - "de-DE"
+            # Add all other supported locales
+          example: "en-US"
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleReference'
+          nullable: true # Make it nullable if roles are optional
+          example: [{"id": 1}]
+          description: Array of role references for the user.
+
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        refreshToken:
+          type: string
+          example: def456...
+          nullable: true
+        user:
+          $ref: '#/components/schemas/User'
+
+    Address: # Referenced by User schema
+      type: object
+      properties:
+        type:
+          type: string
+          example: "home"
+        line1:
+          type: string
+          example: "123 Updated Main St"
+        line2:
+          type: string
+          example: "Apt 4B"
+          nullable: true
+        city:
+          type: string
+          example: "Updated City"
+        state:
+          type: string
+          example: "Updated State"
+        country:
+          type: string
+          example: "US"
+        zip:
+          type: string
+          example: "54321"
+
+    Role: # Referenced by User schema
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64 # Match Long in RoleEntity
+          example: 1
+        name:
+          type: string
+          example: "ROLE_USER"
+
+    User: # Referenced by AuthResponse schema
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64 # Match Long in UserEntity
+          example: 1
+        email:
+          type: string
+          format: email
+          example: updateduser@example.com
+        phone:
+          type: string
+          example: "+14155552671"
+          nullable: true
+        locale:
+          type: string
+          example: "es-ES"
+          nullable: true
+        isActive: # Added isActive based on UserEntity
+          type: boolean
+          description: "Indicates if the user account is active."
+          example: true
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+          nullable: true
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+          nullable: true
+
+    Error: # Referenced by error responses
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          example: "An error occurred."
+        code:
+          type: string
+          nullable: true
+          example: "INVALID_INPUT"
+        details: # For more detailed validation errors, could be an object or array of objects
+          type: object # Or consider 'array' with items of a specific error detail schema
+          nullable: true
+          additionalProperties: true # Allows for flexible detail structures
+          example: {"field": "email", "issue": "must be a well-formed email address"}
+
+
+  responses: # Reusable error responses
+    BadRequestError:
+      description: Invalid request payload or parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
