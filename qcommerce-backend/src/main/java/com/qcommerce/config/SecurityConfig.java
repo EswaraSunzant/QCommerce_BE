@@ -1,4 +1,4 @@
-package com.qcommerce.config; // Updated package
+package com.qcommerce.config; 
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,14 +31,14 @@ public class SecurityConfig {
                 .requestMatchers(
                         "/swagger-ui.html",
                         "/swagger-ui/**",
-                        "/v3/api-docs/**", // Or "/v2/api-docs/**" if using OpenAPI 2
+                        "/v3/api-docs/**", 
                         "/swagger-resources/**",
                         "/webjars/**"
                 ).permitAll()
-                // Permit access to your existing /auth/register endpoint
-                .requestMatchers("/auth/register").permitAll()
-                // All other requests require authentication
-                .anyRequest().authenticated()
+                // Permit access to authentication endpoints
+                .requestMatchers("/auth/register", "/auth/login").permitAll() // Added /auth/login
+                // All other requests require authentication (example)
+                .anyRequest().authenticated() 
             );
         return http.build();
     }

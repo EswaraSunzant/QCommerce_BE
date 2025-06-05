@@ -1,8 +1,8 @@
 openapi: 3.0.0
 info:
-  title: QCommerce API - User Registration
+  title: QCommerce API - User Authentication and Profile
   version: v1.0.0
-  description: API specification for User Registration in the QCommerce Application.
+  description: API specification for User Authentication (Registration, Login, Logout) and User Profile Management (Addresses) in the QCommerce Application.
   contact:
     name: API Support
     email: support@example.com
@@ -17,15 +17,17 @@ servers:
     description: Production server
 
 tags:
-  - name: Authentication and User # Ensure this exact name is used if you have operation-level tags too
-    description: User registration operations.
+  - name: Authentication and User
+    description: User registration, login, and logout operations.
+  - name: User Profile
+    description: Operations related to the authenticated user's profile, including address management.
 
 paths:
   /auth/register:
     post:
       operationId: registerUser
       tags:
-        - Authentication and User # Consistent with the global tag
+        - Authentication and User
       summary: Register a new user
       requestBody:
         required: true
@@ -42,7 +44,7 @@ paths:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
           $ref: '#/components/responses/BadRequestError'
-        '409': # Consider adding a 409 Conflict for user already exists
+        '409': 
           description: User with the given email or phone already exists.
           content:
             application/json:
@@ -51,7 +53,211 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags:
+        - Authentication and User
+      summary: Log in an existing user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400': 
+          $ref: '#/components/responses/BadRequestError'
+        '401': 
+          description: Invalid credentials or user not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' 
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/logout:
+    post:
+      operationId: logoutUser
+      tags:
+        - Authentication and User
+      summary: Log out the currently authenticated user
+      description: Invalidates the user's session/token on the server-side if applicable (e.g., by adding token to a denylist). Client should also clear its stored tokens.
+      security:
+        - bearerAuth: [] 
+      responses:
+        '200':
+          description: User logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logout successful"
+        '401':
+          description: Unauthorized (e.g., token missing or invalid)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/me/addresses:
+    get:
+      operationId: listMyAddresses
+      tags:
+        - User Profile
+      summary: List all addresses for the authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: A list of addresses.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      operationId: addMyAddress
+      tags:
+        - User Profile
+      summary: Add a new address for the authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressInput' 
+      responses:
+        '201':
+          description: Address created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address' 
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/me/addresses/{addressId}:
+    get:
+      operationId: getMyAddressById
+      tags:
+        - User Profile
+      summary: Get a specific address by ID for the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          description: ID of the address to retrieve.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: The requested address.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      operationId: updateMyAddress
+      tags:
+        - User Profile
+      summary: Update an existing address by ID for the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          description: ID of the address to update.
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddressInput' 
+      responses:
+        '200':
+          description: Address updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address' 
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      operationId: deleteMyAddress
+      tags:
+        - User Profile
+      summary: Delete an address by ID for the authenticated user
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: addressId
+          in: path
+          required: true
+          description: ID of the address to delete.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Address deleted successfully.
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
 components:
+  securitySchemes:
+    bearerAuth: 
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
   schemas:
     RoleReference:
       type: object
@@ -60,7 +266,7 @@ components:
       properties:
         id:
           type: integer
-          format: int64 # Match Long in RoleEntity
+          format: int64 
           example: 1
           description: The ID of the role.
 
@@ -75,21 +281,20 @@ components:
           format: email
           description: "User's email address. Must be unique."
           maxLength: 254
-          pattern: "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$" # Basic email pattern
+          pattern: "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$" 
           example: testuser@example.com
         phone:
           type: string
           nullable: true
           description: "User's phone number, preferably in E.164 format. Must be unique if provided."
-          pattern: "^\\+[1-9]\\d{1,14}$" # Example E.164 regex
+          pattern: "^\\+[1-9]\\d{1,14}$" 
           example: "+14155552671"
         password:
           type: string
-          format: password # For UI hint
+          format: password 
           description: "User's password. Must be 8-100 characters long and include at least one uppercase letter, one lowercase letter, one digit, and one special character."
           minLength: 8
           maxLength: 100
-          # Example pattern: At least one uppercase, one lowercase, one digit, one special char
           pattern: "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&._-])[A-Za-z\\d@$!%*?&._-]{8,}$"
           example: "Str0ngP@ss!"
         locale:
@@ -103,15 +308,31 @@ components:
             - "es-MX"
             - "fr-FR"
             - "de-DE"
-            # Add all other supported locales
           example: "en-US"
         roles:
           type: array
           items:
             $ref: '#/components/schemas/RoleReference'
-          nullable: true # Make it nullable if roles are optional
+          nullable: true 
           example: [{"id": 1}]
           description: Array of role references for the user.
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: "User's email address."
+          example: "testuser@example.com"
+        password:
+          type: string
+          format: password
+          description: "User's password."
+          example: "Str0ngP@ss!"
 
     AuthResponse:
       type: object
@@ -126,49 +347,89 @@ components:
         user:
           $ref: '#/components/schemas/User'
 
-    Address: # Referenced by User schema
+    AddressInput: 
       type: object
+      required:
+        - type
+        - line1
+        - city
+        - state
+        - country
+        - zip
       properties:
         type:
           type: string
-          example: "home"
+          description: "Type of address (e.g., home, work, shipping, billing)."
+          example: "shipping"
+          maxLength: 50
         line1:
           type: string
-          example: "123 Updated Main St"
+          description: "Street address line 1."
+          example: "123 Main St"
+          maxLength: 255
         line2:
           type: string
-          example: "Apt 4B"
           nullable: true
+          description: "Street address line 2 (e.g., Apt, Suite)."
+          example: "Apt 4B"
+          maxLength: 255
         city:
           type: string
-          example: "Updated City"
+          description: "City name."
+          example: "Anytown"
+          maxLength: 100
         state:
           type: string
-          example: "Updated State"
-        country:
+          description: "State or province."
+          example: "CA"
+          maxLength: 100
+        country: 
           type: string
+          description: "Country code (e.g., ISO 3166-1 alpha-2)."
           example: "US"
+          minLength: 2
+          maxLength: 2
         zip:
           type: string
-          example: "54321"
+          description: "Postal code or ZIP code."
+          example: "90210"
+          maxLength: 20
+        phone: # Added optional phone number for the address
+          type: string
+          nullable: true
+          description: "Optional contact phone number for this specific address (e.g., for delivery purposes)."
+          pattern: "^\\+[1-9]\\d{1,14}$" # Example E.164 regex
+          example: "+15551234567"
 
-    Role: # Referenced by User schema
+    Address: 
+      allOf: 
+        - $ref: '#/components/schemas/AddressInput'
+      type: object
+      properties:
+        id: 
+          type: integer
+          format: int64
+          description: "Unique identifier for the address."
+          example: 1
+          readOnly: true 
+
+    Role: 
       type: object
       properties:
         id:
           type: integer
-          format: int64 # Match Long in RoleEntity
+          format: int64 
           example: 1
         name:
           type: string
           example: "ROLE_USER"
 
-    User: # Referenced by AuthResponse schema
+    User: 
       type: object
       properties:
         id:
           type: integer
-          format: int64 # Match Long in UserEntity
+          format: int64 
           example: 1
         email:
           type: string
@@ -182,11 +443,11 @@ components:
           type: string
           example: "es-ES"
           nullable: true
-        isActive: # Added isActive based on UserEntity
+        isActive: 
           type: boolean
           description: "Indicates if the user account is active."
           example: true
-        addresses:
+        addresses: 
           type: array
           items:
             $ref: '#/components/schemas/Address'
@@ -197,7 +458,7 @@ components:
             $ref: '#/components/schemas/Role'
           nullable: true
 
-    Error: # Referenced by error responses
+    Error: 
       type: object
       required:
         - message
@@ -209,16 +470,28 @@ components:
           type: string
           nullable: true
           example: "INVALID_INPUT"
-        details: # For more detailed validation errors, could be an object or array of objects
-          type: object # Or consider 'array' with items of a specific error detail schema
+        details: 
+          type: object 
           nullable: true
-          additionalProperties: true # Allows for flexible detail structures
+          additionalProperties: true 
           example: {"field": "email", "issue": "must be a well-formed email address"}
 
 
-  responses: # Reusable error responses
+  responses: 
     BadRequestError:
       description: Invalid request payload or parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnauthorizedError:
+      description: Authentication information is missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFoundError:
+      description: The requested resource was not found.
       content:
         application/json:
           schema:
@@ -229,4 +502,3 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
-
