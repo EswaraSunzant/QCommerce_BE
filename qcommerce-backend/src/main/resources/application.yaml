@@ -1,0 +1,83 @@
+# ===================================================================
+# COMMON PROPERTIES (Active in ALL environments)
+# ===================================================================
+spring:
+  application:
+    name: qcommerce-backend
+  # Set 'local' as the default profile
+  profiles:
+    default: local
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        format_sql: true
+
+# JWT settings
+jwt:
+  access-token:
+    expiration-ms: 86400000 # 1 day
+  refresh-token:
+    expiration-ms: 604800000 # 7 days
+  issuer: qcommerce-app
+
+---
+# ===================================================================
+# LOCAL PROFILE
+# ===================================================================
+spring:
+  config:
+    activate:
+      on-profile: local
+  # --- Database config for local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/QCommerce
+    username: quser
+    password: qcommerce@123
+  # --- Dev-friendly settings
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  security:
+    user:
+      password: admin123 # Example, assuming you re-add the user/pass
+      name: admin
+
+# --- Local JWT secret
+jwt:
+  secret: zVTcy5/pa/FisoRkSHSzvFNDMsC+9zq+RwZACTT5X5k=
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+
+---
+# ===================================================================
+# DEVELOPMENT (DOCKER) PROFILE ('dev')
+# ===================================================================
+spring:
+  config:
+    activate:
+      on-profile: dev
+  # --- Config provided by environment variables
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+  # --- Settings for the deployed dev environment
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# --- JWT secret from environment variable
+jwt:
+  secret: ${JWT_SECRET}
+
+logging:
+  level:
+    org:
+      springframework: INFO
